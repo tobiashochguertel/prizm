@@ -11,7 +11,7 @@ import Foundation
 /// (upload, download) is required.
 ///
 /// Value type — safe to pass across layers without defensive copying.
-nonisolated struct Attachment: Identifiable, Equatable, Hashable {
+nonisolated struct Attachment: Identifiable, Equatable, Hashable, Codable {
     /// Server-assigned attachment ID.
     let id: String
     /// Plaintext file name (decrypted from EncString at sync time).

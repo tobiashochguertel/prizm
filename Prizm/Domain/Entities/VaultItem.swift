@@ -2,7 +2,7 @@ import Foundation
 
 /// A fully-decrypted vault entry. Produced by `CipherMapper` from a `RawCipher`.
 /// Value type — safe to pass across layers without defensive copying.
-nonisolated struct VaultItem: Identifiable, Equatable, Hashable {
+nonisolated struct VaultItem: Identifiable, Equatable, Hashable, Codable {
     let id: String
     let folderId: String?
     let name: String
@@ -51,22 +51,82 @@ nonisolated struct VaultItem: Identifiable, Equatable, Hashable {
         self.organizationId = organizationId
         self.collectionIds = collectionIds
     }
+
+    /// Encodes this item to a pretty-printed JSON string using ISO 8601 dates.
+    ///
+    /// The output is the decrypted domain model — plaintext values, not EncString-encoded
+    /// wire format. Suitable for consumption by external tools (e.g. `vault-item-to-print`).
+    ///
+    /// - Returns: A JSON string, or nil if encoding fails.
+    func toJSONString() -> String? {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        guard let data = try? encoder.encode(self) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
 }
 
 // MARK: - Item content discriminator
 
 /// Discriminated union of all five Bitwarden vault item types.
-nonisolated enum ItemContent: Equatable, Hashable {
+///
+/// `Codable` conformance uses a discriminated union with a `"type"` key
+/// so JSON output is self-describing and can be consumed by external tools.
+nonisolated enum ItemContent: Equatable, Hashable, Codable {
     case login(LoginContent)
     case secureNote(SecureNoteContent)
     case card(CardContent)
     case identity(IdentityContent)
     case sshKey(SSHKeyContent)
+
+    private enum CodingKeys: String, CodingKey {
+        case type
+        case login
+        case secureNote
+        case card
+        case identity
+        case sshKey
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .login(let v):
+            try c.encode("login",      forKey: .type)
+            try c.encode(v,            forKey: .login)
+        case .secureNote(let v):
+            try c.encode("secureNote", forKey: .type)
+            try c.encode(v,            forKey: .secureNote)
+        case .card(let v):
+            try c.encode("card",       forKey: .type)
+            try c.encode(v,            forKey: .card)
+        case .identity(let v):
+            try c.encode("identity",   forKey: .type)
+            try c.encode(v,            forKey: .identity)
+        case .sshKey(let v):
+            try c.encode("sshKey",     forKey: .type)
+            try c.encode(v,            forKey: .sshKey)
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try c.decode(String.self, forKey: .type)
+        switch type {
+        case "login":      self = .login(try c.decode(LoginContent.self,        forKey: .login))
+        case "secureNote": self = .secureNote(try c.decode(SecureNoteContent.self, forKey: .secureNote))
+        case "card":       self = .card(try c.decode(CardContent.self,          forKey: .card))
+        case "identity":   self = .identity(try c.decode(IdentityContent.self,  forKey: .identity))
+        case "sshKey":     self = .sshKey(try c.decode(SSHKeyContent.self,      forKey: .sshKey))
+        default: throw DecodingError.dataCorruptedError(forKey: .type, in: c, debugDescription: "Unknown item content type: \(type)")
+        }
+    }
 }
 
 // MARK: - Login
 
-nonisolated struct LoginContent: Equatable, Hashable {
+nonisolated struct LoginContent: Equatable, Hashable, Codable {
     let username: String?
     let password: String?
     let uris: [LoginURI]
@@ -76,13 +136,13 @@ nonisolated struct LoginContent: Equatable, Hashable {
     let customFields: [CustomField]
 }
 
-nonisolated struct LoginURI: Equatable, Hashable {
+nonisolated struct LoginURI: Equatable, Hashable, Codable {
     let uri: String
     let matchType: URIMatchType?
 }
 
 /// URI-matching strategy used when auto-filling (stored per URI, not used in v1 display).
-nonisolated enum URIMatchType: Int, Equatable, Hashable {
+nonisolated enum URIMatchType: Int, Equatable, Hashable, Codable {
     case domain = 0
     case host = 1
     case startsWith = 2
@@ -93,7 +153,7 @@ nonisolated enum URIMatchType: Int, Equatable, Hashable {
 
 // MARK: - Card
 
-nonisolated struct CardContent: Equatable, Hashable {
+nonisolated struct CardContent: Equatable, Hashable, Codable {
     let cardholderName: String?
     let brand: String?
     let number: String?
@@ -106,7 +166,7 @@ nonisolated struct CardContent: Equatable, Hashable {
 
 // MARK: - Identity
 
-nonisolated struct IdentityContent: Equatable, Hashable {
+nonisolated struct IdentityContent: Equatable, Hashable, Codable {
     let title: String?
     let firstName: String?
     let middleName: String?
@@ -131,14 +191,14 @@ nonisolated struct IdentityContent: Equatable, Hashable {
 
 // MARK: - Secure Note
 
-nonisolated struct SecureNoteContent: Equatable, Hashable {
+nonisolated struct SecureNoteContent: Equatable, Hashable, Codable {
     let notes: String?
     let customFields: [CustomField]
 }
 
 // MARK: - SSH Key
 
-nonisolated struct SSHKeyContent: Equatable, Hashable {
+nonisolated struct SSHKeyContent: Equatable, Hashable, Codable {
     let privateKey: String?
     let publicKey: String?
     let keyFingerprint: String?

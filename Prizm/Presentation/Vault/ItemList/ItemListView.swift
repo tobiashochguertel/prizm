@@ -19,6 +19,10 @@ struct ItemListView: View {
     /// Nil disables the delete context-menu action (e.g. when trash actions are unavailable).
     var onDelete: ((String) async -> Void)? = nil
     var onToggleFavorite: ((VaultItem) -> Void)? = nil
+    /// Copies the item's UUID to the clipboard (no auto-clear — not a secret).
+    var onCopyItemID: ((String) -> Void)? = nil
+    /// Copies the item's decrypted JSON to the clipboard (with auto-clear).
+    var onCopyItemJSON: ((VaultItem) -> Void)? = nil
 
     // Tracks which item is pending a soft-delete confirmation alert.
     @State private var itemToDelete:    VaultItem? = nil
@@ -61,6 +65,20 @@ struct ItemListView: View {
                                                 onToggleFavorite(item)
                                             }
                                         }
+                                        Divider()
+                                        if let onCopyItemID {
+                                            Button("Copy Item ID") {
+                                                onCopyItemID(item.id)
+                                            }
+                                            .accessibilityIdentifier(AccessibilityID.ItemList.copyItemID)
+                                        }
+                                        if let onCopyItemJSON {
+                                            Button("Copy as JSON") {
+                                                onCopyItemJSON(item)
+                                            }
+                                            .accessibilityIdentifier(AccessibilityID.ItemList.copyItemJSON)
+                                        }
+                                        Divider()
                                         if onDelete != nil {
                                             Button("Delete", role: .destructive) {
                                                 itemToDelete    = item

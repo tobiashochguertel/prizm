@@ -75,6 +75,10 @@ nonisolated enum AccessibilityID {
         static let list              = "itemList.list"
         static let emptyState        = "itemList.empty"
         static func row(_ id: String) -> String { "itemList.row.\(id)" }
+        /// Context menu: Copy Item ID
+        static let copyItemID        = "itemList.contextMenu.copyItemID"
+        /// Context menu: Copy as JSON
+        static let copyItemJSON      = "itemList.contextMenu.copyItemJSON"
     }
 
     // MARK: - Item Detail (US3)

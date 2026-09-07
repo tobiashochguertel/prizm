@@ -16,6 +16,10 @@ struct TrashView: View {
     let onRestore:          (String) async -> Void
     /// Called to permanently delete a single trashed item (irreversible).
     let onPermanentDelete:  (String) async -> Void
+    /// Copies the item's UUID to the clipboard (no auto-clear — not a secret).
+    var onCopyItemID: ((String) -> Void)? = nil
+    /// Copies the item's decrypted JSON to the clipboard (with auto-clear).
+    var onCopyItemJSON: ((VaultItem) -> Void)? = nil
 
     // Confirmation alert state for single-item permanent delete.
     @State private var itemToDelete:    VaultItem? = nil
@@ -33,6 +37,19 @@ struct TrashView: View {
                         .contextMenu {
                             Button("Restore") {
                                 Task { await onRestore(item.id) }
+                            }
+                            Divider()
+                            if let onCopyItemID {
+                                Button("Copy Item ID") {
+                                    onCopyItemID(item.id)
+                                }
+                                .accessibilityIdentifier(AccessibilityID.ItemList.copyItemID)
+                            }
+                            if let onCopyItemJSON {
+                                Button("Copy as JSON") {
+                                    onCopyItemJSON(item)
+                                }
+                                .accessibilityIdentifier(AccessibilityID.ItemList.copyItemJSON)
                             }
                             Divider()
                             Button("Delete Permanently", role: .destructive) {

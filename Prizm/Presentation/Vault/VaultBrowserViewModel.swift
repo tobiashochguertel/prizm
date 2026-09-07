@@ -234,6 +234,24 @@ final class VaultBrowserViewModel: ObservableObject {
         }
     }
 
+    /// Copies the item's UUID to the pasteboard without auto-clear (not a secret).
+    func copyItemID(_ id: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(id, forType: .string)
+        logger.debug("Copied item ID to clipboard (no auto-clear)")
+    }
+
+    /// Copies the item's decrypted JSON to the pasteboard with auto-clear.
+    func copyItemJSON(_ item: VaultItem) {
+        guard let json = item.toJSONString() else {
+            logger.error("Failed to encode item \(item.id) as JSON")
+            return
+        }
+        copy(json)
+        logger.debug("Copied item JSON to clipboard with auto-clear")
+    }
+
     /// Dismisses the sync error banner (FR-049).
     func dismissSyncError() {
         syncErrorMessage = nil

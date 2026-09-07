@@ -80,7 +80,9 @@ struct VaultBrowserView: View {
                             selection:         $viewModel.itemSelection,
                             faviconLoader:     faviconLoader,
                             onRestore:         { id in await viewModel.performRestore(id: id) },
-                            onPermanentDelete: { id in await viewModel.performPermanentDelete(id: id) }
+                            onPermanentDelete: { id in await viewModel.performPermanentDelete(id: id) },
+                            onCopyItemID:      { id in viewModel.copyItemID(id) },
+                            onCopyItemJSON:    { item in viewModel.copyItemJSON(item) }
                         )
                     } else {
                         ItemListView(
@@ -90,7 +92,9 @@ struct VaultBrowserView: View {
                             searchQuery:    viewModel.searchQuery.isEmpty ? nil : viewModel.searchQuery,
                             organizations:  viewModel.organizations,
                             onDelete:       { id in await viewModel.performSoftDelete(id: id) },
-                            onToggleFavorite: { viewModel.toggleFavorite(item: $0) }
+                            onToggleFavorite: { viewModel.toggleFavorite(item: $0) },
+                            onCopyItemID:     { id in viewModel.copyItemID(id) },
+                            onCopyItemJSON:   { item in viewModel.copyItemJSON(item) }
                         )
                     }
                 }

@@ -1,7 +1,7 @@
 import Foundation
 
 /// A user-defined or linked extra field attached to a vault item.
-nonisolated struct CustomField: Equatable, Hashable {
+nonisolated struct CustomField: Equatable, Hashable, Codable {
     let name: String
     let value: String?
     let type: CustomFieldType
@@ -10,7 +10,7 @@ nonisolated struct CustomField: Equatable, Hashable {
 }
 
 /// Discriminates how a custom field's value is stored and displayed.
-nonisolated enum CustomFieldType: Int, Equatable, Hashable {
+nonisolated enum CustomFieldType: Int, Equatable, Hashable, Codable {
     case text = 0
     case hidden = 1
     case boolean = 2
@@ -19,7 +19,7 @@ nonisolated enum CustomFieldType: Int, Equatable, Hashable {
 
 /// Identifies a native vault-item field that a linked custom field mirrors.
 /// Raw values match the Bitwarden API schema.
-nonisolated enum LinkedFieldId: Int, Equatable, Hashable {
+nonisolated enum LinkedFieldId: Int, Equatable, Hashable, Codable {
     // MARK: - Login fields
     case loginUsername = 100
     case loginPassword = 101
