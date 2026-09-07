@@ -29,9 +29,15 @@ struct PrizmApp: App {
 
     var body: some Scene {
         WindowGroup {
-            rootView
-                .frame(minWidth: 480, minHeight: 360)
-                .environment(optionKeyMonitor)
+            ZStack(alignment: .bottomTrailing) {
+                rootView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .environment(optionKeyMonitor)
+                #if DEBUG
+                DebugScreenLabel(screen: rootVM.screen)
+                #endif
+            }
+            .frame(minWidth: 480, minHeight: 360)
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
@@ -235,13 +241,27 @@ extension AppContainer: RootViewModelDependencies {
 @MainActor
 final class RootViewModel: ObservableObject {
 
-    enum Screen {
+    enum Screen: Equatable {
         case login
         case loading
         case totpPrompt
         case unlock
         case syncing(message: String)
         case vault
+
+        #if DEBUG
+        /// Human-readable name shown in the debug screen label overlay.
+        var debugName: String {
+            switch self {
+            case .login:               "Login"
+            case .loading:             "Loading"
+            case .totpPrompt:          "TOTP Prompt"
+            case .unlock:              "Unlock"
+            case .syncing(let message): "Syncing (\(message))"
+            case .vault:               "Vault Browser"
+            }
+        }
+        #endif
     }
 
     @Published var screen: Screen
@@ -515,3 +535,22 @@ final class RootViewModel: ObservableObject {
         }
     }
 }
+
+// MARK: - Debug Screen Label
+
+#if DEBUG
+/// Shows the current screen name in the bottom-right corner during debug builds.
+struct DebugScreenLabel: View {
+    let screen: RootViewModel.Screen
+
+    var body: some View {
+        Text(screen.debugName)
+            .font(.caption.monospaced())
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 6))
+            .accessibilityHidden(true)
+    }
+}
+#endif
